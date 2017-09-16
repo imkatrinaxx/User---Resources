@@ -1,0 +1,164 @@
+<html>
+	<head> <title> CMSC Lab 1 </title> </head>
+	<body>
+		<canvas id = "canv" width = "2000" height = "1000" > </canvas>
+	</body>
+
+	<script> 
+		var canvas = document.getElementById("canv");
+		var context = canvas.getContext("2d");
+		var randomnum = 30;
+
+		var Free = "Free";
+		var Waiting = "Waiting";
+		var Using = "Using";
+
+		function randomGenerator(max, min){
+		    return Math.round(Math.random()*max) + min;
+		}
+
+		function getNames(size) {
+			var name = new Array();
+	        for(var i = 0; i < size; i++) {
+	            var n = randomGenerator(randomnum, 1);
+	            while(name.includes(n)){
+	                n = randomGenerator(randomnum, 1);
+	            }
+	            name.push(n);
+	        }
+	        name.sort( function(a,b) { return a - b; } );
+	        return name;
+		}
+	</script>
+
+	<script>
+		function Resource(id) {
+			this.id = id;
+			this.status = Free;
+		}
+
+		function User(id){
+		    this.id = id;
+		    this.status = Free;
+		    this.resqueue = [];
+		    this.timqueue = [];
+		}
+	</script>
+
+	<script type="text/javascript">	
+		var resources = [];
+		var users = [];
+		
+		var resourceNum = randomGenerator(randomnum,1);
+		var userNum = randomGenerator(randomnum,1);
+		var resname = getNames(resourceNum);
+		for(i = 0; i < resourceNum; i++){
+		    resources.push(new Resource(resname[i]));
+		}
+
+		var usersname = getNames(userNum);
+		for(var i = 0; i < userNum; i++){
+			var useri = new User(usersname[i]);
+			var numberofresources;
+			do{
+				numberofresources = randomGenerator(resourceNum-1, 1);
+			}while(numberofresources > resourceNum || numberofresources < 1)
+			
+			var randomres;
+			for(var rloop = 0; rloop < numberofresources; rloop++ ) {
+				do{
+					randomres = randomGenerator(resourceNum-1, 0);
+				} while(useri.resqueue.indexOf(randomres) > -1);
+				useri.resqueue.push(randomres);					
+				useri.timqueue.push(randomGenerator(randomnum, 2));			
+			}
+			users.push(useri);   
+		}
+		
+		console.log(users);
+		console.log(resources);
+
+	</script>
+
+	<script> 
+	
+		function renderUI(){	
+		    context.fillStyle = "white";
+		    context.fillRect(0, 0, 2000,1000);
+		    context.fillStyle = "black";
+		    context.font = "15px Arial";
+		    context.fillText("Resources (" + resourceNum + ")", 50, 40);
+		    context.fillText("Users (" + userNum + ")", 200, 40);
+		    context.fillText("User Status ", 300, 40);
+		    context.font = "11px Arial";
+
+		    var z = 0;
+
+		    for(var ri = 0; ri < resources.length; ri++) {
+		    	if(resources[ri].status == Free){
+		    		context.fillStyle = "#ff3333";
+		    	} else {
+		    		context.fillStyle = "black";
+		    	}
+		    	context.fillText("Resource " + resources[ri].id + "  - " + resources[ri].status, 50, 80+(ri*20));
+		    }
+
+			for(var ui = 0; ui < users.length; ui++) {
+				context.fillStyle = "black";
+				context.fillText("User " + users[ui].id, 200, 80 + (ui*20) + z);
+		    	if(users[ui].resqueue.length == 0) {
+		    		context.fillStyle = "#ff3333";
+					context.fillText("FREE", 300, 80 + (ui*20) + z);
+				} else{		
+					
+					if(users[ui].status == Waiting) {
+						context.fillStyle = "blue";	
+						context.fillText( users[ui].status + " (res" + resources[users[ui].resqueue[0]].id + ")", 300, 80 + (ui*20) + z);
+					} else {
+						context.fillStyle = "black";	
+						var stat = users[ui].status;
+						if(users[ui].status == Free) {
+							stat = Using;
+						}
+						context.fillText( stat + " (res" + resources[users[ui].resqueue[0]].id + ") (" + users[ui].timqueue[0] + "s)", 300, 80 + (ui*20) + z);			
+					}
+				}
+		    }		    
+		}
+
+		function main(){
+			var using = [];
+		   	for(var n = 0; n < users.length; n++){	
+		   		if(users[n].status == Waiting) {
+					if(resources[users[n].resqueue[0]].status == Free) {
+						users[n].status = Free;
+						break;
+					} 
+		   		} else {
+					if(users[n].resqueue.length > 0) {
+						if(users[n].timqueue[0] == 1) {
+							resources[users[n].resqueue[0]].status = Free;							
+							users[n].status = Free;
+							users[n].resqueue.shift();
+							users[n].timqueue.shift();
+						} else {
+							if(resources[users[n].resqueue[0]].status == Using &&
+								users[n].status == Free || users[n].status == Waiting) {
+								users[n].status = Waiting;
+							} else {
+								resources[users[n].resqueue[0]].status = Using;
+								users[n].status = Using;
+								users[n].timqueue[0]--;
+							}						
+						}
+					} else {
+						users[n].status = Free;
+					}
+		   		}
+		    }
+			renderUI();
+		}
+
+		setInterval(main,100);
+	</script>
+</html>
